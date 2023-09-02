@@ -10,7 +10,9 @@ import (
 
 type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	GetUser(ctx context.Context, login string) (User, error)
+	GetUserById(ctx context.Context, id int64) (User, error)
+	GetUserByLogin(ctx context.Context, login string) (User, error)
+	GetUsers(ctx context.Context) ([]User, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 
