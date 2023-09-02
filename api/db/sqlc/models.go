@@ -4,7 +4,23 @@
 
 package db
 
-import ()
+import (
+	"database/sql"
+)
+
+type BlackList struct {
+	ID        int64        `json:"id"`
+	UserID    int64        `json:"user_id"`
+	FriendID  int64        `json:"friend_id"`
+	CreatedAt sql.NullTime `json:"created_at"`
+}
+
+type Friend struct {
+	ID        int64        `json:"id"`
+	UserID    int64        `json:"user_id"`
+	FriendID  int64        `json:"friend_id"`
+	CreatedAt sql.NullTime `json:"created_at"`
+}
 
 type User struct {
 	ID             int64  `json:"id"`

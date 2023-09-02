@@ -41,14 +41,14 @@ func authMiddleware(tokenMaker token.JWTMaker) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "token is incorrect")
 			}
 
-			ctx.Set(authorizationPayloadKey, payload)
+			ctx.Set(authorizationPayloadKey, payload.UserId)
 			return next(ctx)
 		}
 	}
 }
 
-func getUserId(c echo.Context) (uint, error) {
-	id, ok := c.Get(authorizationPayloadKey).(uint)
+func getUserId(c echo.Context) (int64, error) {
+	id, ok := c.Get(authorizationPayloadKey).(int64)
 
 	if !ok {
 		return 0, errors.New("user id is of invalid type")

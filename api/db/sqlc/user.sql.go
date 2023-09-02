@@ -9,6 +9,40 @@ import (
 	"context"
 )
 
+const addBlackList = `-- name: AddBlackList :exec
+INSERT INTO black_list (
+    user_id,
+    friend_id
+) VALUES ($1, $2)
+`
+
+type AddBlackListParams struct {
+	UserID   int64 `json:"user_id"`
+	FriendID int64 `json:"friend_id"`
+}
+
+func (q *Queries) AddBlackList(ctx context.Context, arg AddBlackListParams) error {
+	_, err := q.db.ExecContext(ctx, addBlackList, arg.UserID, arg.FriendID)
+	return err
+}
+
+const addFriend = `-- name: AddFriend :exec
+INSERT INTO friends (
+    user_id,
+    friend_id
+) VALUES ($1, $2)
+`
+
+type AddFriendParams struct {
+	UserID   int64 `json:"user_id"`
+	FriendID int64 `json:"friend_id"`
+}
+
+func (q *Queries) AddFriend(ctx context.Context, arg AddFriendParams) error {
+	_, err := q.db.ExecContext(ctx, addFriend, arg.UserID, arg.FriendID)
+	return err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
     name,
@@ -33,6 +67,106 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.HashedPassword,
 	)
 	return i, err
+}
+
+const deleteBlackList = `-- name: DeleteBlackList :exec
+DELETE FROM black_list
+WHERE user_id=$1 AND friend_id=$2
+`
+
+type DeleteBlackListParams struct {
+	UserID   int64 `json:"user_id"`
+	FriendID int64 `json:"friend_id"`
+}
+
+func (q *Queries) DeleteBlackList(ctx context.Context, arg DeleteBlackListParams) error {
+	_, err := q.db.ExecContext(ctx, deleteBlackList, arg.UserID, arg.FriendID)
+	return err
+}
+
+const deleteFriend = `-- name: DeleteFriend :exec
+DELETE FROM friends
+       WHERE user_id=$1 AND friend_id=$2
+`
+
+type DeleteFriendParams struct {
+	UserID   int64 `json:"user_id"`
+	FriendID int64 `json:"friend_id"`
+}
+
+func (q *Queries) DeleteFriend(ctx context.Context, arg DeleteFriendParams) error {
+	_, err := q.db.ExecContext(ctx, deleteFriend, arg.UserID, arg.FriendID)
+	return err
+}
+
+const getBlackList = `-- name: GetBlackList :many
+SELECT users.id, users.name, users.login FROM black_list
+    INNER JOIN users On black_list.friend_id = users.id
+                                         WHERE user_id = $1
+`
+
+type GetBlackListRow struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Login string `json:"login"`
+}
+
+func (q *Queries) GetBlackList(ctx context.Context, userID int64) ([]GetBlackListRow, error) {
+	rows, err := q.db.QueryContext(ctx, getBlackList, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetBlackListRow{}
+	for rows.Next() {
+		var i GetBlackListRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Login); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFriends = `-- name: GetFriends :many
+SELECT users.id, users.name, users.login FROM friends
+    INNER JOIN users On friends.friend_id = users.id
+                                         WHERE user_id = $1
+`
+
+type GetFriendsRow struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Login string `json:"login"`
+}
+
+func (q *Queries) GetFriends(ctx context.Context, userID int64) ([]GetFriendsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFriends, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetFriendsRow{}
+	for rows.Next() {
+		var i GetFriendsRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Login); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUserById = `-- name: GetUserById :one

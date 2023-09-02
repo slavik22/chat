@@ -50,7 +50,20 @@ func (server *Server) setupRouter() {
 	{
 		users.GET("/", server.getUsers)
 		users.GET("/:id", server.getUser)
-		users.POST("/", server.updateUser)
+		users.PUT("/", server.updateUser)
+
+		friends := users.Group("/friends")
+		{
+			friends.GET("/", server.getFriends)
+			friends.POST("/:id", server.addFriend)
+			friends.DELETE("/:id", server.removeFriend)
+		}
+		blackList := users.Group("/blackList")
+		{
+			blackList.GET("/", server.getBlackList)
+			blackList.POST("/:id", server.addBlackList)
+			blackList.DELETE("/:id", server.removeBlackList)
+		}
 	}
 
 	server.router = router

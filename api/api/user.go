@@ -58,7 +58,6 @@ func (server *Server) loginUser(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, rsp)
 }
-
 func (server *Server) getUsers(ctx echo.Context) error {
 	users, err := server.store.GetUsers(ctx.Request().Context())
 
@@ -68,7 +67,6 @@ func (server *Server) getUsers(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, users)
 }
-
 func (server *Server) getUser(ctx echo.Context) error {
 	userId, err := strconv.Atoi(ctx.Param("id"))
 
@@ -83,6 +81,150 @@ func (server *Server) getUser(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, users)
+}
+
+func (server *Server) getFriends(ctx echo.Context) error {
+	userId, err := getUserId(ctx)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	users, err := server.store.GetFriends(ctx.Request().Context(), int64(userId))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.JSON(http.StatusOK, users)
+}
+func (server *Server) addFriend(ctx echo.Context) error {
+	userId, err := getUserId(ctx)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	friendId, err := strconv.Atoi(ctx.Param("id"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	if userId == int64(friendId) {
+		return echo.NewHTTPError(http.StatusBadRequest, "User id is equal to friend id")
+	}
+
+	arg := db.AddFriendParams{
+		UserID:   int64(userId),
+		FriendID: int64(friendId),
+	}
+
+	err = server.store.AddFriend(ctx.Request().Context(), arg)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.NoContent(http.StatusCreated)
+}
+func (server *Server) removeFriend(ctx echo.Context) error {
+	userId, err := getUserId(ctx)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	friendId, err := strconv.Atoi(ctx.Param("id"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	arg := db.DeleteFriendParams{
+		UserID:   int64(userId),
+		FriendID: int64(friendId),
+	}
+
+	err = server.store.DeleteFriend(ctx.Request().Context(), arg)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.NoContent(http.StatusCreated)
+}
+
+func (server *Server) getBlackList(ctx echo.Context) error {
+	userId, err := strconv.Atoi(ctx.Param("id"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	users, err := server.store.GetBlackList(ctx.Request().Context(), int64(userId))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.JSON(http.StatusOK, users)
+}
+func (server *Server) addBlackList(ctx echo.Context) error {
+	userId, err := getUserId(ctx)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	friendId, err := strconv.Atoi(ctx.Param("id"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	if userId == int64(friendId) {
+		return echo.NewHTTPError(http.StatusBadRequest, "User id is equal to friend id")
+	}
+
+	arg := db.AddBlackListParams{
+		UserID:   int64(userId),
+		FriendID: int64(friendId),
+	}
+
+	err = server.store.AddBlackList(ctx.Request().Context(), arg)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.NoContent(http.StatusCreated)
+}
+func (server *Server) removeBlackList(ctx echo.Context) error {
+	userId, err := getUserId(ctx)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	friendId, err := strconv.Atoi(ctx.Param("id"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	arg := db.DeleteBlackListParams{
+		UserID:   int64(userId),
+		FriendID: int64(friendId),
+	}
+
+	err = server.store.DeleteBlackList(ctx.Request().Context(), arg)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.NoContent(http.StatusCreated)
 }
 
 type userRequest struct {

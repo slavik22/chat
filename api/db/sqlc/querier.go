@@ -9,7 +9,13 @@ import (
 )
 
 type Querier interface {
+	AddBlackList(ctx context.Context, arg AddBlackListParams) error
+	AddFriend(ctx context.Context, arg AddFriendParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteBlackList(ctx context.Context, arg DeleteBlackListParams) error
+	DeleteFriend(ctx context.Context, arg DeleteFriendParams) error
+	GetBlackList(ctx context.Context, userID int64) ([]GetBlackListRow, error)
+	GetFriends(ctx context.Context, userID int64) ([]GetFriendsRow, error)
 	GetUserById(ctx context.Context, id int64) (User, error)
 	GetUserByLogin(ctx context.Context, login string) (User, error)
 	GetUsers(ctx context.Context) ([]User, error)
