@@ -40,6 +40,10 @@ func (server *Server) setupRouter() {
 	router.Use(middleware.Logger())
 	router.Use(middleware.Recover())
 
+	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+	}))
+
 	router.GET("/chatroom/:chatId/user/:userId", server.webSocketConn)
 
 	v1 := router.Group("api/v1")
@@ -75,10 +79,11 @@ func (server *Server) setupRouter() {
 		chats.GET("/user/:id", server.getUserChatRooms)
 		chats.POST("/", server.createChatRoom)
 		chats.DELETE("/:chatId/", server.deleteChatRoom)
+
 		chats.POST("/:chatId/users/:userId", server.addUserToChatRoom)
 		chats.DELETE("/:chatId/users/:userId", server.removeUserFromChatRoom)
 
-		chats.GET(":chatId/messages", server.GetChatMessages)
+		chats.GET("/:chatId/messages/", server.GetChatMessages)
 
 	}
 

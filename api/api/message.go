@@ -36,7 +36,7 @@ func (server *Server) GetChatMessages(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
 	}
 
-	rooms, err := server.store.GetChatMessages(ctx.Request().Context(), int64(chatId))
+	messages, err := server.store.GetChatMessages(ctx.Request().Context(), int64(chatId))
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -47,7 +47,7 @@ func (server *Server) GetChatMessages(ctx echo.Context) error {
 
 	}
 
-	return ctx.JSON(http.StatusOK, rooms)
+	return ctx.JSON(http.StatusOK, messages)
 }
 
 func (server *Server) addMessage(ctx echo.Context, req db.CreateMessageParams) (*db.Message, error) {
@@ -170,7 +170,6 @@ var (
 func (c *ChatRoom) handleMessages(server *Server, ctx echo.Context) {
 	for {
 		msg := <-c.broadcast
-
 		msgAdded, err := server.addMessage(ctx, db.CreateMessageParams{UserID: int64(msg.UserID), ChatRoomID: int64(c.id), Content: msg.Message})
 
 		if err != nil {
@@ -189,13 +188,13 @@ func (c *ChatRoom) handleMessages(server *Server, ctx echo.Context) {
 		m := struct {
 			Id        int64  `json:"id"`
 			UserId    int64  `json:"userId"`
-			UserName  string `json:"userName"`
+			Name      string `json:"name"`
 			CreatedAt string `json:"createdAt"`
 			Content   string `json:"content"`
 		}{
 			Id:        msgAdded.ID,
 			UserId:    msgAdded.UserID,
-			UserName:  user.Name,
+			Name:      user.Name,
 			CreatedAt: t.String(),
 			Content:   msgAdded.Content,
 		}
@@ -270,6 +269,7 @@ func (server *Server) webSocketConn(c echo.Context) error {
 		if rooms == nil {
 			rooms = make(map[int]*ChatRoom)
 		}
+		fmt.Printf("Before %v\n", rooms)
 
 		room, exists := rooms[chatId]
 
@@ -285,12 +285,13 @@ func (server *Server) webSocketConn(c echo.Context) error {
 			room.removeClient(client)
 			ws.Close()
 		}()
+		fmt.Printf("After %v\n", rooms)
 
 		for {
 			var content string
 			if err := websocket.Message.Receive(ws, &content); err != nil {
 				fmt.Printf("Error receiving message: %v\n")
-				return
+				break
 			}
 
 			msg := Message{
