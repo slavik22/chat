@@ -1,5 +1,5 @@
 -- name: GetUserChatRooms :many
-    SELECT user_chat_rooms.id,user_chat_rooms.chat_room_id,chat_rooms.name FROM user_chat_rooms
+SELECT user_chat_rooms.id,user_chat_rooms.chat_room_id,chat_rooms.name FROM user_chat_rooms
 INNER JOIN chat_rooms On user_chat_rooms.chat_room_id = chat_rooms.id
 WHERE user_id = $1;
 
