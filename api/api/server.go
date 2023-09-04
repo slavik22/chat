@@ -2,12 +2,11 @@ package api
 
 import (
 	"fmt"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	db "github.com/slavik22/chat/db/sqlc"
 	"github.com/slavik22/chat/token"
 	"github.com/slavik22/chat/util"
-	"net/http"
-
-	"github.com/labstack/echo/v4"
 )
 
 type Server struct {
@@ -38,6 +37,15 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 func (server *Server) setupRouter() {
 	router := echo.New()
 
+	router.Use(middleware.Logger())
+	router.Use(middleware.Recover())
+
+	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+	}))
+
+	router.GET("/chatroom/:chatId/user/:userId", server.webSocketConn)
+
 	v1 := router.Group("api/v1")
 
 	auth := v1.Group("/auth")
@@ -51,6 +59,7 @@ func (server *Server) setupRouter() {
 		users.GET("/", server.getUsers)
 		users.GET("/:id", server.getUser)
 		users.PUT("/", server.updateUser)
+		users.GET("/:id/chats", server.getUserChatRooms)
 
 		friends := users.Group("/friends")
 		{
@@ -65,10 +74,22 @@ func (server *Server) setupRouter() {
 			blackList.DELETE("/:id", server.removeBlackList)
 		}
 	}
+	chats := v1.Group("/chats", authMiddleware(server.jwtMaker))
+	{
+		chats.GET("/user/:id", server.getUserChatRooms)
+		chats.POST("/", server.createChatRoom)
+		chats.DELETE("/:chatId/", server.deleteChatRoom)
+
+		chats.POST("/:chatId/users/:userId", server.addUserToChatRoom)
+		chats.DELETE("/:chatId/users/:userId", server.removeUserFromChatRoom)
+
+		chats.GET("/:chatId/messages/", server.GetChatMessages)
+
+	}
 
 	server.router = router
 }
 
 func (server *Server) Start(address string) error {
-	return server.router.StartServer(&http.Server{Addr: address})
+	return server.router.Start(address)
 }

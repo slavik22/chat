@@ -17,6 +17,9 @@ type userLoginRequest struct {
 }
 
 type loginUserResponse struct {
+	Id          int64  `json:"id"`
+	Name        string `json:"name"`
+	Login       string `json:"login"`
 	AccessToken string `json:"access_token"`
 }
 
@@ -34,7 +37,6 @@ func (server *Server) loginUser(ctx echo.Context) error {
 		} else {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
-
 	}
 
 	err = util.CheckPassword(req.Password, user.HashedPassword)
@@ -53,6 +55,9 @@ func (server *Server) loginUser(ctx echo.Context) error {
 	}
 
 	rsp := loginUserResponse{
+		Id:          user.ID,
+		Name:        user.Name,
+		Login:       user.Login,
 		AccessToken: accessToken,
 	}
 
