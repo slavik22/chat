@@ -282,25 +282,34 @@ func (server *Server) updateUser(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	hashedPassword, err := util.HashPassword(requestData.Password)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
 	id, err := getUserId(ctx)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
+	user, err := server.store.GetUserById(ctx.Request().Context(), id)
+
+	var newHashedPassword string
+
+	if requestData.Password == "" {
+		newHashedPassword = user.HashedPassword
+	} else {
+		newHashedPassword, err = util.HashPassword(requestData.Password)
+
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+	}
+
 	arg := db.UpdateUserParams{
 		ID:             int64(id),
 		Name:           requestData.Name,
 		Login:          requestData.Login,
-		HashedPassword: hashedPassword,
+		HashedPassword: newHashedPassword,
 	}
 
-	user, err := server.store.UpdateUser(ctx.Request().Context(), arg)
+	updatedUser, err := server.store.UpdateUser(ctx.Request().Context(), arg)
 
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
@@ -312,6 +321,6 @@ func (server *Server) updateUser(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return ctx.JSON(http.StatusOK, userResponse{Name: user.Name, Login: user.Login})
+	return ctx.JSON(http.StatusOK, userResponse{Name: updatedUser.Name, Login: updatedUser.Login})
 
 }

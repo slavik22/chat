@@ -5,6 +5,9 @@ import Register from './components/Register.vue'
 import Login from './components/Login.vue'
 import Chat from './components/Chat.vue'
 import Chats from './components/Chats.vue'
+import Users from './components/Users.vue'
+import Profile from './components/Profile.vue'
+
 import store from './store';
 
 const router = createRouter({
@@ -12,8 +15,10 @@ const router = createRouter({
     routes: [
         { path: '/register', component: Register },
         { path: '/login', component: Login },
-        { path: '/', component: Chats },
+        { path: '/users', component: Users },
+        { path: '/profile', component: Profile },
         { path: '/chat/:chatId', component: Chat },
+        { path: '/', component: Chats },
     ]
 });
 

@@ -4,8 +4,8 @@ import authHeader from './auth-header';
 const API_URL = 'http://localhost:8080/api/v1/chats/';
 
 class ChatService {
-  list(userId) {
-    return axios.get(API_URL + 'user/' + userId, { headers: authHeader() });
+  list() {
+    return axios.get(API_URL, { headers: authHeader() });
   }
 
   listChatMessages(chatId){

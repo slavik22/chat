@@ -17,13 +17,13 @@
           <button @click="addUser" class="send-button">Send</button>
         </div>
        
-        <ol>
+        <ul>
           <li v-for="user in userList" :key="user.id">
             {{ user.name }}
           <button @click="deleteUser(user.id)">Delete</button>
             
           </li>
-        </ol>
+        </ul>
       </div>
     </div>
   </template>

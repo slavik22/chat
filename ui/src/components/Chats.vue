@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 
 export default {
   data() {
@@ -30,15 +30,20 @@ export default {
         })
   },
   methods: {
-    fetchChatList() {
-        this.$store.dispatch('chat/list', this.currentUser.id)
-    },
     deleteChat(chatId){
-      this.$store.dispatch('chat/delete', chatId)
+      this.chatDelete(chatId)
+      location.reload() 
     },
     addChat() {
-      this.$store.dispatch('chat/create', this.chatName)
+      this.chatCreate(this.chatName)
+      location.reload() 
     },
+
+    ...mapActions({
+      fetchChatList: 'chat/list',
+      chatDelete: 'chat/delete',
+      chatCreate: 'chat/create'
+    })
   },
   mounted() {
     if (!this.currentUser) {

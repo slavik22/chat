@@ -76,7 +76,7 @@ func (server *Server) setupRouter() {
 	}
 	chats := v1.Group("/chats", authMiddleware(server.jwtMaker))
 	{
-		chats.GET("/user/:id", server.getUserChatRooms)
+		chats.GET("/", server.getUserChatRooms)
 		chats.POST("/", server.createChatRoom)
 		chats.DELETE("/:chatId", server.deleteChatRoom)
 

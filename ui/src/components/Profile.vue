@@ -2,27 +2,30 @@
     <div class="user-profile">
       <h1>User Profile</h1>
       <div class="profile-form">
-        <div>
+        <div v-if="currentUser">
           <label for="name">Name:</label>
-          <input v-model="user.name" id="name" class="profile-input" />
+          <input v-model="currentUser.name" id="name"  class="profile-input" />
         </div>
-        <div>
+        <div v-if="currentUser">
           <label for="login">Login:</label>
-          <input v-model="user.email" id="email" class="profile-input" />
+          <input v-model="currentUser.login" id="email" class="profile-input" />
         </div>
-        <button @click="updateProfile" class="save-button">Save Changes</button>
+        <div v-if="currentUser">
+          <label for="login">New password:</label>
+          <input v-model="password" id="password" class="profile-input"/>
+        </div>
+        <button v-if="currentUser" @click="updateProfile" class="save-button">Save Changes</button>
       </div>
     </div>
   </template>
   
 <script>
+import axios from 'axios';
+import authHeader from '@/services/auth-header';
     export default{
     data() {
         return {
-            user: {
-                name: currentUser.name,
-                login: currentUser.login
-            },
+            password: ""
         };
     },
 
@@ -37,8 +40,10 @@
         }
     },
     methods: {
-        updateProfile() {
-            // Implement logic to update the user's profile
+         async updateProfile() {
+          await axios.put("http://localhost:8080/api/v1/users/", {name: this.currentUser.name, login: this.currentUser.login, password: this.password}, { headers: authHeader() });
+          this.$store.dispatch("auth/logout")
+          this.$router.push("/login");
         },
     },
     }

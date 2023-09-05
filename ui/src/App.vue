@@ -3,8 +3,13 @@
   <a href="/" class="logo">Chat</a>
   <div class="header-right">
     <a class="active" href="#home">Home</a>
-    <a v-if="loggedIn" to="/login" @click.prevent="logout">Log Out</a>
+    
 
+    <router-link v-if="loggedIn" to="/users">Users</router-link>
+    <router-link v-if="loggedIn" to="/profile">Profile</router-link>
+
+    <a v-if="loggedIn" to="/login" @click.prevent="logout">Log Out</a>
+    
     <router-link v-if="!loggedIn" to="/register">Sign Up</router-link>
     <router-link v-if="!loggedIn" to="/login">Sign In</router-link><br>
   </div>

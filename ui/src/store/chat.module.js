@@ -14,73 +14,24 @@ export const chat = {
   namespaced: true,
   state: initialState,
   actions: {
-    list({ commit }, userId) {
-      return ChatService.list(userId).then(
-        pg => {
-          commit('listSuccess', pg);
-          return Promise.resolve(pg);
-        },
-        error => {
-          return Promise.reject(error);
-        }
-      );
+    async list({ commit }) {
+      await ChatService.list().then(pg => commit('listSuccess', pg));
     },
-    listUsers({ commit }, chatId) {
-      return ChatService.listChatUsers(chatId).then(
-        pg => {
-          commit('listChatUsersSuccess', pg);
-          return Promise.resolve(pg);
-        },
-        error => {
-          return Promise.reject(error);
-        }
-      );
+    async listUsers({ commit }, chatId) {
+      await ChatService.listChatUsers(chatId).then(pg => commit('listChatUsersSuccess', pg));
     },
 
-    deleteUser({ commit }, {userId, chatId}) {
-      return ChatService.removeUserFromChat(chatId, userId).then(
-        pg => {
-          commit('httpSuccess', pg);
-          return Promise.resolve(pg);
-        },
-        error => {
-          return Promise.reject(error);
-        }
-      );
+    async deleteUser({ commit }, {userId, chatId}) {
+      await ChatService.removeUserFromChat(chatId, userId).then(pg => commit('httpSuccess', pg));
     },
-    delete({ commit }, chatId) {
-      return ChatService.delete(chatId).then(
-        pg => {
-          commit('httpSuccess', pg);
-          return Promise.resolve(pg);
-        },
-        error => {
-          return Promise.reject(error);
-        }
-      );
+    async delete({ commit }, chatId) {
+      await ChatService.delete(chatId).then(pg => commit('httpSuccess', pg));
     },
-    create({ commit }, chatName) {
-      return ChatService.create(chatName).then(
-         res => {
-            commit('httpSuccess', res)
-            return Promise.resolve(res);
-        },
-        error => {
-          return Promise.reject(error);
-        }
-      );
+    async create({ commit }, chatName) {
+      await ChatService.create(chatName).then(res => commit('httpSuccess', res))
     },
-    addUser({ commit }, {chatId, login}) {
-      console.log(login)
-      return ChatService.addUserToChat(chatId ,login).then(
-         res => {
-            commit('httpSuccess', res)
-            return Promise.resolve(res);
-        },
-        error => {
-          return Promise.reject(error);
-        }
-      );
+    async addUser({ commit }, {chatId, login}) {
+      await ChatService.addUserToChat(chatId ,login).then(res => commit('httpSuccess', res))
     },
   },
   mutations: {
