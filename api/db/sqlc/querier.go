@@ -22,6 +22,7 @@ type Querier interface {
 	DeleteUserFromChat(ctx context.Context, arg DeleteUserFromChatParams) error
 	GetBlackList(ctx context.Context, userID int64) ([]GetBlackListRow, error)
 	GetChatMessages(ctx context.Context, chatRoomID int64) ([]GetChatMessagesRow, error)
+	GetChatUsers(ctx context.Context, chatRoomID int64) ([]GetChatUsersRow, error)
 	GetFriends(ctx context.Context, userID int64) ([]GetFriendsRow, error)
 	GetUserById(ctx context.Context, id int64) (User, error)
 	GetUserByLogin(ctx context.Context, login string) (User, error)

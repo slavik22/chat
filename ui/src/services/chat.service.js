@@ -12,18 +12,24 @@ class ChatService {
       return axios.get(API_URL  + chatId + "/messages/", { headers: authHeader() });
   }
 
+  listChatUsers(chatId){
+    return axios.get(API_URL  + chatId + "/users/", { headers: authHeader() });
+}
+
   initWebSocketConn(userId, chatId){
     console.log("Service " + chatId)
     return new WebSocket("ws://localhost:8080/chatroom/" + chatId + "/user/" + userId);
   }
 
-  create(payload) {
-    return axios.post(API_URL + '/', payload, { headers: authHeader() });
+  create(chatName) {
+    return axios.post(API_URL, {name: chatName}, { headers: authHeader() });
   }
 
-  addUserToChat(chatId, userId, payload) {
-    return axios.post(API_URL + chatId + "/users/" + userId, payload, { headers: authHeader() });
+  addUserToChat(chatId, login) {
+    return axios.post(API_URL + chatId + "/users/",{login: login}, { headers: authHeader() });
   }
+
+
   removeUserFromChat(chatId, userId) {
     return axios.delete(API_URL + chatId + "/users/" + userId, { headers: authHeader() });
   }
@@ -33,8 +39,8 @@ class ChatService {
 
   }
 
-  _delete(chatId) {
-    return axios.delete(API_URL + '/' + chatId, { headers: authHeader() });
+  delete(chatId) {
+    return axios.delete(API_URL + chatId, { headers: authHeader() });
   }
 }
 

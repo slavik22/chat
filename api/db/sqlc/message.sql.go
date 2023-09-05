@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createMessage = `-- name: CreateMessage :one
@@ -54,12 +55,12 @@ WHERE chat_room_id = $1
 `
 
 type GetChatMessagesRow struct {
-	ID         int64       `json:"id"`
-	ChatRoomID int64       `json:"chat_room_id"`
-	UserID     int64       `json:"user_id"`
-	Content    string      `json:"content"`
-	Createdat  interface{} `json:"createdat"`
-	Name       string      `json:"name"`
+	ID         int64        `json:"id"`
+	ChatRoomID int64        `json:"chat_room_id"`
+	UserID     int64        `json:"user_id"`
+	Content    string       `json:"content"`
+	Createdat  sql.NullTime `json:"createdat"`
+	Name       string       `json:"name"`
 }
 
 func (q *Queries) GetChatMessages(ctx context.Context, chatRoomID int64) ([]GetChatMessagesRow, error) {

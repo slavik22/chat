@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-	"time"
 )
 
 func (server *Server) GetChatMessages(ctx echo.Context) error {
@@ -183,19 +182,17 @@ func (c *ChatRoom) handleMessages(server *Server, ctx echo.Context) {
 			return
 		}
 
-		t := msgAdded.Createdat.(time.Time)
-
 		m := struct {
-			Id        int64  `json:"id"`
-			UserId    int64  `json:"userId"`
-			Name      string `json:"name"`
-			CreatedAt string `json:"createdAt"`
-			Content   string `json:"content"`
+			Id        int64        `json:"id"`
+			UserId    int64        `json:"userId"`
+			Name      string       `json:"name"`
+			CreatedAt sql.NullTime `json:"createdAt"`
+			Content   string       `json:"content"`
 		}{
 			Id:        msgAdded.ID,
 			UserId:    msgAdded.UserID,
 			Name:      user.Name,
-			CreatedAt: t.String(),
+			CreatedAt: msgAdded.Createdat,
 			Content:   msgAdded.Content,
 		}
 
@@ -303,5 +300,7 @@ func (server *Server) webSocketConn(c echo.Context) error {
 		}
 
 	}).ServeHTTP(c.Response(), c.Request())
+
+	delete(rooms, chatId)
 	return nil
 }

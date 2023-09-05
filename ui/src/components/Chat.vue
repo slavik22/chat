@@ -11,9 +11,19 @@
       </div>
       <div class="users">
         <h2>Users in this Chat</h2>
-        <ul>
-          <li v-for="user in users" :key="user.id">{{ user.name }}</li>
-        </ul>
+
+        <div class="input-box">
+          <input v-model="newUserLogin" @keyup.enter="addUser" placeholder="Type new user login..." class="message-input" />
+          <button @click="addUser" class="send-button">Send</button>
+        </div>
+       
+        <ol>
+          <li v-for="user in userList" :key="user.id">
+            {{ user.name }}
+          <button @click="deleteUser(user.id)">Delete</button>
+            
+          </li>
+        </ol>
       </div>
     </div>
   </template>
@@ -25,12 +35,13 @@ import { mapGetters } from 'vuex';
       return {
         chatId: this.$route.params.chatId,
         newMessage: '', 
-        users: [],
+        newUserLogin: ''
       };
     },
     computed: {
       ...mapGetters({
             messageList : 'message/messageList',
+            userList : 'chat/userList',
             currentUser : 'auth/userCurr'
         }),
         conn: function(){
@@ -40,6 +51,17 @@ import { mapGetters } from 'vuex';
     methods: {
       fetchMessageList() {
         this.$store.dispatch('message/list', this.chatId)
+      },
+      fetchUserList() {
+        this.$store.dispatch('chat/listUsers', this.chatId)
+      },
+      addUser() {
+        this.$store.dispatch('chat/addUser', {chatId: this.chatId, login: this.newUserLogin})
+        this.newUserLogin = ""
+      },
+      deleteUser(userId){
+        this.$store.dispatch('chat/deleteUser', {chatId: this.chatId, userId: userId})
+
       },
       sendMessage() {
         if (!this.conn) {
@@ -57,6 +79,7 @@ import { mapGetters } from 'vuex';
     },
     mounted() {
       this.fetchMessageList()
+      this.fetchUserList()
       this.conn.onmessage = this.receiveMessage;
     },
   };

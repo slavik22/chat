@@ -1,3 +1,8 @@
+-- name: GetChatUsers :many
+SELECT users.id,users.name, users.login FROM user_chat_rooms
+INNER JOIN users ON user_chat_rooms.user_id = users.id
+WHERE chat_room_id = $1;
+
 -- name: AddUserToChat :exec
 INSERT INTO user_chat_rooms (
     chat_room_id,

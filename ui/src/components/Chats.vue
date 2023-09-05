@@ -4,9 +4,13 @@
     <ul>
       <li v-for="chatRoom in chatList" :key="chatRoom.chat_room_id">
         <router-link :to="'/chat/' + chatRoom.chat_room_id" class="chat-room-link">{{ chatRoom.name }}</router-link>
+        <button @click="deleteChat(chatRoom.chat_room_id)">Delete</button>
       </li>
     </ul>
-    <button @click="createChatRoom" class="create-button">Create New Chat Room</button>
+    <div class="input-box">
+          <input v-model="chatName" @keyup.enter="addChat" placeholder="Type chat name..." class="message-input" />
+          <button @click="addChat" class="create-button">Create New Chat Room</button>
+    </div>
   </div>
 </template>
 
@@ -14,6 +18,11 @@
 import { mapGetters } from 'vuex';
 
 export default {
+  data() {
+      return {
+        chatName: "",
+      };
+    },
   computed: {
     ...mapGetters({
             chatList : 'chat/chatList',
@@ -24,9 +33,11 @@ export default {
     fetchChatList() {
         this.$store.dispatch('chat/list', this.currentUser.id)
     },
-
-    createChatRoom() {
-      // Implement logic to create a new chat room
+    deleteChat(chatId){
+      this.$store.dispatch('chat/delete', chatId)
+    },
+    addChat() {
+      this.$store.dispatch('chat/create', this.chatName)
     },
   },
   mounted() {

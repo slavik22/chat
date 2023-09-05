@@ -28,11 +28,11 @@ type Friend struct {
 }
 
 type Message struct {
-	ID         int64       `json:"id"`
-	ChatRoomID int64       `json:"chat_room_id"`
-	UserID     int64       `json:"user_id"`
-	Content    string      `json:"content"`
-	Createdat  interface{} `json:"createdat"`
+	ID         int64        `json:"id"`
+	ChatRoomID int64        `json:"chat_room_id"`
+	UserID     int64        `json:"user_id"`
+	Content    string       `json:"content"`
+	Createdat  sql.NullTime `json:"createdat"`
 }
 
 type User struct {

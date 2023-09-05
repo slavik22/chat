@@ -33,6 +33,42 @@ func (server *Server) getUserChatRooms(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, rooms)
 }
 
+func (server *Server) GetChatUsers(ctx echo.Context) error {
+	userId, err := getUserId(ctx)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	chatId, err := strconv.Atoi(ctx.Param("chatId"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	isMember, err := server.isMemberOfChatRoom(ctx, userId, int64(chatId))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if !isMember {
+		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
+	}
+
+	users, err := server.store.GetChatUsers(ctx.Request().Context(), int64(chatId))
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		} else {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+
+	}
+
+	return ctx.JSON(http.StatusOK, users)
+}
+
 func (server *Server) createChatRoom(ctx echo.Context) error {
 	userId, err := getUserId(ctx)
 	if err != nil {
@@ -105,6 +141,10 @@ func (server *Server) deleteChatRoom(ctx echo.Context) error {
 	return ctx.NoContent(http.StatusOK)
 }
 
+type addUserRequest struct {
+	Login string `json:"login""`
+}
+
 func (server *Server) addUserToChatRoom(ctx echo.Context) error {
 	userId, err := getUserId(ctx)
 	if err != nil {
@@ -112,11 +152,6 @@ func (server *Server) addUserToChatRoom(ctx echo.Context) error {
 	}
 
 	chatId, err := strconv.Atoi(ctx.Param("chatId"))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	userToAddId, err := strconv.Atoi(ctx.Param("userId"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -129,9 +164,21 @@ func (server *Server) addUserToChatRoom(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
 	}
 
+	var userLogin addUserRequest
+
+	if err := ctx.Bind(&userLogin); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	userToAdd, err := server.store.GetUserByLogin(ctx.Request().Context(), userLogin.Login)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Login is incorrect")
+	}
+
 	arg := db.AddUserToChatParams{
 		ChatRoomID: int64(chatId),
-		UserID:     int64(userToAddId),
+		UserID:     userToAdd.ID,
 	}
 
 	err = server.store.AddUserToChat(ctx.Request().Context(), arg)

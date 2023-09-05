@@ -78,9 +78,10 @@ func (server *Server) setupRouter() {
 	{
 		chats.GET("/user/:id", server.getUserChatRooms)
 		chats.POST("/", server.createChatRoom)
-		chats.DELETE("/:chatId/", server.deleteChatRoom)
+		chats.DELETE("/:chatId", server.deleteChatRoom)
 
-		chats.POST("/:chatId/users/:userId", server.addUserToChatRoom)
+		chats.GET("/:chatId/users/", server.GetChatUsers)
+		chats.POST("/:chatId/users/", server.addUserToChatRoom)
 		chats.DELETE("/:chatId/users/:userId", server.removeUserFromChatRoom)
 
 		chats.GET("/:chatId/messages/", server.GetChatMessages)
