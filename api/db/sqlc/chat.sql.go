@@ -9,11 +9,12 @@ import (
 	"context"
 )
 
-const createChatRoom = `-- name: CreateChatRoom :exec
+const createChatRoom = `-- name: CreateChatRoom :one
 INSERT INTO chats (
     user1_id,
     user2_id
 ) VALUES ($1,$2)
+RETURNING id, user1_id, user2_id
 `
 
 type CreateChatRoomParams struct {
@@ -21,9 +22,11 @@ type CreateChatRoomParams struct {
 	User2ID int64 `json:"user2_id"`
 }
 
-func (q *Queries) CreateChatRoom(ctx context.Context, arg CreateChatRoomParams) error {
-	_, err := q.db.ExecContext(ctx, createChatRoom, arg.User1ID, arg.User2ID)
-	return err
+func (q *Queries) CreateChatRoom(ctx context.Context, arg CreateChatRoomParams) (Chat, error) {
+	row := q.db.QueryRowContext(ctx, createChatRoom, arg.User1ID, arg.User2ID)
+	var i Chat
+	err := row.Scan(&i.ID, &i.User1ID, &i.User2ID)
+	return i, err
 }
 
 const deleteChatRoom = `-- name: DeleteChatRoom :exec

@@ -14,7 +14,6 @@ const (
 	authorizationPayloadKey = "authorization_payload"
 )
 
-// AuthMiddleware creates a gin middleware for authorization
 func authMiddleware(tokenMaker token.JWTMaker) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {

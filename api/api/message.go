@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/websocket"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
 type Client struct {
@@ -26,7 +27,7 @@ type ChatRoom struct {
 	id        int
 	clients   map[*Client]bool
 	broadcast chan Message
-	//mu        sync.Mutex
+	mu        sync.Mutex
 }
 
 var (
@@ -143,14 +144,14 @@ func (c *ChatRoom) handleMessages(server *Server, ctx echo.Context) {
 }
 
 func (c *ChatRoom) addClient(client *Client) {
-	//c.mu.Lock()
-	//defer c.mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.clients[client] = true
 }
 
 func (c *ChatRoom) removeClient(client *Client) {
-	//c.mu.Lock()
-	//defer c.mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	delete(c.clients, client)
 }
 

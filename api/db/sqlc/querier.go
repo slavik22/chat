@@ -11,7 +11,7 @@ import (
 type Querier interface {
 	AddBlackList(ctx context.Context, arg AddBlackListParams) error
 	AddFriend(ctx context.Context, arg AddFriendParams) error
-	CreateChatRoom(ctx context.Context, arg CreateChatRoomParams) error
+	CreateChatRoom(ctx context.Context, arg CreateChatRoomParams) (Chat, error)
 	CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteBlackList(ctx context.Context, arg DeleteBlackListParams) error

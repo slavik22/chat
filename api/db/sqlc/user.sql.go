@@ -86,7 +86,7 @@ func (q *Queries) DeleteBlackList(ctx context.Context, arg DeleteBlackListParams
 
 const deleteFriend = `-- name: DeleteFriend :exec
 DELETE FROM friends
-       WHERE user_id=$1 AND friend_id=$2 OR user_id=$2 AND friend_id=$1
+       WHERE user_id=$1 AND friend_id=$2
 `
 
 type DeleteFriendParams struct {

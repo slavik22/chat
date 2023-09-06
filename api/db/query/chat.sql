@@ -9,11 +9,12 @@ JOIN users user1 ON c.user1_id = user1.id
 JOIN users user2 ON c.user2_id = user2.id
 WHERE c.user1_id = $1 OR c.user2_id = $1;
 
--- name: CreateChatRoom :exec
+-- name: CreateChatRoom :one
 INSERT INTO chats (
     user1_id,
     user2_id
-) VALUES ($1,$2);
+) VALUES ($1,$2)
+RETURNING *;
 
 -- name: DeleteChatRoom :exec
 DELETE FROM chats

@@ -51,7 +51,7 @@ func (server *Server) createChat(ctx echo.Context) error {
 				User2ID: int64(user2Id),
 			}
 
-			err = server.store.CreateChatRoom(ctx.Request().Context(), req)
+			_, err = server.store.CreateChatRoom(ctx.Request().Context(), req)
 
 			if err != nil {
 				if errors.Is(err, sql.ErrNoRows) {
