@@ -1,12 +1,12 @@
 <template>
-    <div>
-        <input type="text" v-model="searchQuery" placeholder="Search users" />
-        <ul>
-            <li v-for="user in filteredUsers" :key="user.id">
+    <div class="container mt-3">
+        <input type="text" v-model="searchQuery" placeholder="Search users" class="form-control"/>
+        <ul class="list-group">
+            <li v-for="user in filteredUsers" :key="user.id" class="list-group-item mt-2">
                 {{ user.name }}
-                <button @click="createChat(user.id)">Create chat</button>
-                <button @click="addToFriends(user.id)">Add to friends</button>
-                <button @click="addToBlackList(user.id)">Add to blackList</button>
+                <button class="btn btn-primary" @click="createChat(user.id)">Create chat</button>
+                <button class="btn btn-success" @click="addToFriends(user.id)">Add to friends</button>
+                <button class="btn btn-danger" @click="addToBlackList(user.id)">Add to blackList</button>
             </li>
         </ul>
     </div>

@@ -1,12 +1,11 @@
 <template>
-  <div class="chat-rooms">
-    <h1>Chat</h1>
-    <ul>
-      <li v-for="chat in chatList" :key="chat.id">
+  <div class="container mt-4">
+    <ul class="list-group">
+      <li class="list-group-item" v-for="chat in chatList" :key="chat.id">
         <router-link :to="'/chat/' + chat.id" class="chat-room-link">
           {{ chat.name1 === currentUser.user.name ? chat.name1: chat.name2 }}
         </router-link>
-        <button @click="deleteChat(chat.id)">Delete</button>
+        <button class="btn btn-danger" @click="deleteChat(chat.id)">Delete</button>
       </li>
     </ul>
   </div>

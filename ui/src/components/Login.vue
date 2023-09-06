@@ -1,40 +1,33 @@
 <template>
-  <div class="col-md-12">
-    <div class="card card-container">
-      <img
-        id="profile-img"
-        src="//ssl.gstatic.com/accounts/ui/avatar_2x.png"
-        class="profile-img-card"
-      />
-      <Form @submit="handleLogin" :validation-schema="schema">
-        <div class="form-group">
-          <label for="login">Login</label>
-          <Field name="login" type="text" class="form-control" />
-          <ErrorMessage name="login" class="error-feedback" />
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <Field name="password" type="password" class="form-control" />
-          <ErrorMessage name="password" class="error-feedback" />
-        </div>
+  <div class="d-flex justify-content-center container">
+    <Form @submit="handleLogin" :validation-schema="schema" style="width: 300px;">
+      <div class="form-outline mb-4">
+        <label for="login" class="form-label">Login</label>
+        <Field name="login" type="text" class="form-control" />
+        <ErrorMessage name="login" class="form-text" />
+      </div>
 
-        <div class="form-group">
-          <button class="btn btn-primary btn-block" :disabled="loading">
-            <span
-              v-show="loading"
-              class="spinner-border spinner-border-sm"
-            ></span>
-            <span>Login</span>
-          </button>
-        </div>
+      <div class="form-outline mb-4">
+        <label for="password" class="form-label">Password</label>
+        <Field name="password" type="password" class="form-control" />
+        <ErrorMessage name="password" class="form-text" />
+      </div>
 
-        <div class="form-group">
-          <div v-if="message" class="alert alert-danger" role="alert">
-            {{ message }}
-          </div>
+      <div class="form-outline mb-4">
+        <input type="submit" class="btn btn-primary btn-block mb-4" :disabled="loading" value="Sign in">
+        <span v-show="loading" class="spinner-border spinner-border-sm"></span>
+      </div>
+
+      <div class="form-outline mb-4">
+        <div v-if="message" class="form-text" role="alert">
+          {{ message }}
         </div>
-      </Form>
-    </div>
+      </div>
+
+      <div class="text-center">
+        <p>Not a member? <a href="#!">Register</a></p>
+      </div>
+    </Form>
   </div>
 </template>
 

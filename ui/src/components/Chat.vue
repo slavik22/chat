@@ -1,13 +1,13 @@
 <template>
-    <div class="chat-room">
-      <div class="messages">
-        <div v-for="message in messageList" :key="message.id" class="message">
+    <div class="container mt-4">
+      <div class="list-group">
+        <div v-for="message in messageList" :key="message.id" class="list-group-item">
           {{ message.name }}: <strong>{{ message.content }}</strong>
         </div>
       </div>
-      <div class="input-box">
-        <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="Type your message..." class="message-input" />
-        <button @click="sendMessage" class="send-button">Send</button>
+      <div class="input-group">
+        <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="Type your message..." class="form-control" />
+        <button @click="sendMessage" class="btn btn-primary">Send</button>
       </div>
     </div>
   </template>
