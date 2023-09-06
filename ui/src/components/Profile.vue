@@ -17,6 +17,26 @@
         <button v-if="currentUser" @click="updateProfile" class="save-button">Save Changes</button>
       </div>
     </div>
+    <div class="friends">
+      <h2>Friends</h2>
+
+      <ul v-if="friends">
+        <li v-for="user in friends" :key="user.id">
+          {{ user.name }}
+           <button @click="deleteFriend(user.id)">Delete</button>
+        </li>
+      </ul>
+    </div>
+    <div class="blackList">
+      <h2>BlackList</h2>
+
+      <ul v-if="blackList">
+        <li v-for="user in blackList" :key="user.id">
+          {{ user.name }}
+          <button @click="deleteBlackList(user.id)">Delete</button>
+        </li>
+      </ul>
+    </div>
   </template>
   
 <script>
@@ -25,7 +45,9 @@ import authHeader from '@/services/auth-header';
     export default{
     data() {
         return {
-            password: ""
+            password: "",
+            friends: null,
+            blackList: null,
         };
     },
 
@@ -38,6 +60,23 @@ import authHeader from '@/services/auth-header';
         if (!this.currentUser) {
             this.$router.push("/login");
         }
+
+        axios.get('http://localhost:8080/api/v1/users/friends/', { headers: authHeader() })
+          .then((response) => {
+          this.friends = response.data;
+        })
+          .catch((error) => {
+          console.error('Error fetching users:', error);
+        });
+
+        axios.get('http://localhost:8080/api/v1/users/blackList/', { headers: authHeader() })
+          .then((response) => {
+          this.blackList = response.data;
+        })
+          .catch((error) => {
+          console.error('Error fetching users:', error);
+        });
+
     },
     methods: {
          async updateProfile() {
@@ -45,39 +84,16 @@ import authHeader from '@/services/auth-header';
           this.$store.dispatch("auth/logout")
           this.$router.push("/login");
         },
+        async deleteFriend(userId){
+          await axios.delete("http://localhost:8080/api/v1/users/friends/" + userId,{ headers: authHeader() });
+          location.reload()
+
+        },
+        async deleteBlackList(userId){
+          await axios.delete("http://localhost:8080/api/v1/users/blackList/" + userId, { headers: authHeader() });
+          location.reload()
+        }
     },
     }
 </script>
-
-  <style scoped>
-  .user-profile {
-    padding: 20px;
-  }
-  
-  h1 {
-    font-size: 24px;
-    margin-bottom: 20px;
-  }
-  
-  .profile-form {
-    max-width: 300px;
-  }
-  
-  .profile-input {
-    width: 100%;
-    padding: 5px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  .save-button {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  </style>
   

@@ -30,7 +30,7 @@ const addFriend = `-- name: AddFriend :exec
 INSERT INTO friends (
     user_id,
     friend_id
-) VALUES ($1, $2)
+) VALUES ($1, $2), ($2,$1)
 `
 
 type AddFriendParams struct {
@@ -86,7 +86,7 @@ func (q *Queries) DeleteBlackList(ctx context.Context, arg DeleteBlackListParams
 
 const deleteFriend = `-- name: DeleteFriend :exec
 DELETE FROM friends
-       WHERE user_id=$1 AND friend_id=$2
+       WHERE user_id=$1 AND friend_id=$2 OR user_id=$2 AND friend_id=$1
 `
 
 type DeleteFriendParams struct {
@@ -200,6 +200,23 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error
 		&i.Login,
 		&i.HashedPassword,
 	)
+	return i, err
+}
+
+const getUserFromBlackList = `-- name: GetUserFromBlackList :one
+SELECT user_id, friend_id, created_at FROM black_list
+WHERE user_id = $1 AND friend_id = $2 LIMIT 1
+`
+
+type GetUserFromBlackListParams struct {
+	UserID   int64 `json:"user_id"`
+	FriendID int64 `json:"friend_id"`
+}
+
+func (q *Queries) GetUserFromBlackList(ctx context.Context, arg GetUserFromBlackListParams) (BlackList, error) {
+	row := q.db.QueryRowContext(ctx, getUserFromBlackList, arg.UserID, arg.FriendID)
+	var i BlackList
+	err := row.Scan(&i.UserID, &i.FriendID, &i.CreatedAt)
 	return i, err
 }
 

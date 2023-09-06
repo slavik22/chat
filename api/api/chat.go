@@ -9,17 +9,13 @@ import (
 	"strconv"
 )
 
-type createChatRequest struct {
-	Name string `json:"name" binding:"required,alphanum"`
-}
-
-func (server *Server) getUserChatRooms(ctx echo.Context) error {
+func (server *Server) getChats(ctx echo.Context) error {
 	userId, err := getUserId(ctx)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
-	rooms, err := server.store.GetUserChatRooms(ctx.Request().Context(), userId)
+	chats, err := server.store.GetUserChats(ctx.Request().Context(), userId)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -30,11 +26,53 @@ func (server *Server) getUserChatRooms(ctx echo.Context) error {
 
 	}
 
-	return ctx.JSON(http.StatusOK, rooms)
+	return ctx.JSON(http.StatusOK, chats)
 }
+func (server *Server) createChat(ctx echo.Context) error {
+	user1Id, err := getUserId(ctx)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
 
-func (server *Server) GetChatUsers(ctx echo.Context) error {
+	user2Id, err := strconv.Atoi(ctx.Param("userId"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	arg := db.GetUserFromBlackListParams{UserID: int64(user2Id), FriendID: user1Id}
+
+	_, err = server.store.GetUserFromBlackList(ctx.Request().Context(), arg)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			req := db.CreateChatRoomParams{
+				User1ID: user1Id,
+				User2ID: int64(user2Id),
+			}
+
+			err = server.store.CreateChatRoom(ctx.Request().Context(), req)
+
+			if err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					return echo.NewHTTPError(http.StatusNotFound, err)
+				} else {
+					return echo.NewHTTPError(http.StatusInternalServerError, err)
+				}
+
+			}
+
+			return ctx.NoContent(http.StatusCreated)
+		} else {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+	}
+	return echo.NewHTTPError(http.StatusBadRequest, "User is in black list")
+
+}
+func (server *Server) deleteChat(ctx echo.Context) error {
 	userId, err := getUserId(ctx)
+
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
@@ -45,85 +83,13 @@ func (server *Server) GetChatUsers(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	isMember, err := server.isMemberOfChatRoom(ctx, userId, int64(chatId))
+	chat, err := server.store.GetChat(ctx.Request().Context(), int64(chatId))
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	if !isMember {
-		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
-	}
-
-	users, err := server.store.GetChatUsers(ctx.Request().Context(), int64(chatId))
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, err)
-		} else {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
-
-	}
-
-	return ctx.JSON(http.StatusOK, users)
-}
-
-func (server *Server) createChatRoom(ctx echo.Context) error {
-	userId, err := getUserId(ctx)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err)
-	}
-
-	var req createChatRequest
-
-	if err := ctx.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	chat, err := server.store.CreateChatRoom(ctx.Request().Context(), req.Name)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, err)
-		} else {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
-
-	}
-
-	arg := db.AddUserToChatParams{UserID: userId, ChatRoomID: chat.ID}
-
-	err = server.store.AddUserToChat(ctx.Request().Context(), arg)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, err)
-		} else {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
-	}
-
-	return ctx.NoContent(http.StatusCreated)
-}
-func (server *Server) deleteChatRoom(ctx echo.Context) error {
-	userId, err := getUserId(ctx)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err)
-	}
-
-	chatId, err := strconv.Atoi(ctx.Param("chatId"))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	isMember, err := server.isMemberOfChatRoom(ctx, userId, int64(chatId))
-
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	if !isMember {
+	if chat.User1ID != userId && chat.User2ID != userId {
 		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
 	}
 
@@ -135,119 +101,7 @@ func (server *Server) deleteChatRoom(ctx echo.Context) error {
 		} else {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
-
 	}
 
 	return ctx.NoContent(http.StatusOK)
-}
-
-type addUserRequest struct {
-	Login string `json:"login""`
-}
-
-func (server *Server) addUserToChatRoom(ctx echo.Context) error {
-	userId, err := getUserId(ctx)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err)
-	}
-
-	chatId, err := strconv.Atoi(ctx.Param("chatId"))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	isMember, err := server.isMemberOfChatRoom(ctx, userId, int64(chatId))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-	if !isMember {
-		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
-	}
-
-	var userLogin addUserRequest
-
-	if err := ctx.Bind(&userLogin); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	userToAdd, err := server.store.GetUserByLogin(ctx.Request().Context(), userLogin.Login)
-
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Login is incorrect")
-	}
-
-	arg := db.AddUserToChatParams{
-		ChatRoomID: int64(chatId),
-		UserID:     userToAdd.ID,
-	}
-
-	err = server.store.AddUserToChat(ctx.Request().Context(), arg)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, err)
-		} else {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
-
-	}
-
-	return ctx.NoContent(http.StatusCreated)
-}
-func (server *Server) removeUserFromChatRoom(ctx echo.Context) error {
-	userId, err := getUserId(ctx)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err)
-	}
-
-	chatId, err := strconv.Atoi(ctx.Param("chatId"))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	userToAddId, err := strconv.Atoi(ctx.Param("userId"))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	isMember, err := server.isMemberOfChatRoom(ctx, userId, int64(chatId))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-	if !isMember {
-		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
-	}
-
-	arg := db.DeleteUserFromChatParams{
-		ChatRoomID: int64(chatId),
-		UserID:     int64(userToAddId),
-	}
-
-	err = server.store.DeleteUserFromChat(ctx.Request().Context(), arg)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, err)
-		} else {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
-
-	}
-
-	return ctx.NoContent(http.StatusCreated)
-}
-
-func (server *Server) isMemberOfChatRoom(ctx echo.Context, userId int64, chatId int64) (bool, error) {
-	rooms, err := server.store.GetUserChatRooms(ctx.Request().Context(), userId)
-	if err != nil {
-		return false, err
-	}
-
-	for _, room := range rooms {
-		if room.ChatRoomID == int64(chatId) {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }

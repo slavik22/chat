@@ -59,7 +59,6 @@ func (server *Server) setupRouter() {
 		users.GET("/", server.getUsers)
 		users.GET("/:id", server.getUser)
 		users.PUT("/", server.updateUser)
-		users.GET("/:id/chats", server.getUserChatRooms)
 
 		friends := users.Group("/friends")
 		{
@@ -76,13 +75,9 @@ func (server *Server) setupRouter() {
 	}
 	chats := v1.Group("/chats", authMiddleware(server.jwtMaker))
 	{
-		chats.GET("/", server.getUserChatRooms)
-		chats.POST("/", server.createChatRoom)
-		chats.DELETE("/:chatId", server.deleteChatRoom)
-
-		chats.GET("/:chatId/users/", server.GetChatUsers)
-		chats.POST("/:chatId/users/", server.addUserToChatRoom)
-		chats.DELETE("/:chatId/users/:userId", server.removeUserFromChatRoom)
+		chats.GET("/", server.getChats)
+		chats.POST("/users/:userId", server.createChat)
+		chats.DELETE("/:chatId", server.deleteChat)
 
 		chats.GET("/:chatId/messages/", server.GetChatMessages)
 

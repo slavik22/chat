@@ -23,6 +23,49 @@ type loginUserResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
+type userRequest struct {
+	Name     string `json:"name" binding:"required,alphanum"`
+	Login    string `json:"login" binding:"required,alphanum"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+type userResponse struct {
+	Name  string `json:"name"`
+	Login string `json:"login"`
+}
+
+func (server *Server) createUser(ctx echo.Context) error {
+	var requestData userRequest
+
+	if err := ctx.Bind(&requestData); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	hashedPassword, err := util.HashPassword(requestData.Password)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	arg := db.CreateUserParams{
+		Name:           requestData.Name,
+		Login:          requestData.Login,
+		HashedPassword: hashedPassword,
+	}
+
+	user, err := server.store.CreateUser(ctx.Request().Context(), arg)
+
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case "unique_violation":
+				return echo.NewHTTPError(http.StatusForbidden, err)
+			}
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.JSON(http.StatusCreated, userResponse{Name: user.Name, Login: user.Login})
+}
 func (server *Server) loginUser(ctx echo.Context) error {
 	var req userLoginRequest
 	if err := ctx.Bind(&req); err != nil {
@@ -86,6 +129,55 @@ func (server *Server) getUser(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, users)
+}
+func (server *Server) updateUser(ctx echo.Context) error {
+	var requestData userRequest
+
+	if err := ctx.Bind(&requestData); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	id, err := getUserId(ctx)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	user, err := server.store.GetUserById(ctx.Request().Context(), id)
+
+	var newHashedPassword string
+
+	if requestData.Password == "" {
+		newHashedPassword = user.HashedPassword
+	} else {
+		newHashedPassword, err = util.HashPassword(requestData.Password)
+
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+	}
+
+	arg := db.UpdateUserParams{
+		ID:             int64(id),
+		Name:           requestData.Name,
+		Login:          requestData.Login,
+		HashedPassword: newHashedPassword,
+	}
+
+	updatedUser, err := server.store.UpdateUser(ctx.Request().Context(), arg)
+
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case "unique_violation":
+				return echo.NewHTTPError(http.StatusForbidden, err)
+			}
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.JSON(http.StatusOK, userResponse{Name: updatedUser.Name, Login: updatedUser.Login})
+
 }
 
 func (server *Server) getFriends(ctx echo.Context) error {
@@ -161,7 +253,7 @@ func (server *Server) removeFriend(ctx echo.Context) error {
 }
 
 func (server *Server) getBlackList(ctx echo.Context) error {
-	userId, err := strconv.Atoi(ctx.Param("id"))
+	userId, err := getUserId(ctx)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
@@ -193,7 +285,7 @@ func (server *Server) addBlackList(ctx echo.Context) error {
 	}
 
 	arg := db.AddBlackListParams{
-		UserID:   int64(userId),
+		UserID:   userId,
 		FriendID: int64(friendId),
 	}
 
@@ -230,97 +322,4 @@ func (server *Server) removeBlackList(ctx echo.Context) error {
 	}
 
 	return ctx.NoContent(http.StatusCreated)
-}
-
-type userRequest struct {
-	Name     string `json:"name" binding:"required,alphanum"`
-	Login    string `json:"login" binding:"required,alphanum"`
-	Password string `json:"password" binding:"required,min=6"`
-}
-
-type userResponse struct {
-	Name  string `json:"name"`
-	Login string `json:"login"`
-}
-
-func (server *Server) createUser(ctx echo.Context) error {
-	var requestData userRequest
-
-	if err := ctx.Bind(&requestData); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	hashedPassword, err := util.HashPassword(requestData.Password)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	arg := db.CreateUserParams{
-		Name:           requestData.Name,
-		Login:          requestData.Login,
-		HashedPassword: hashedPassword,
-	}
-
-	user, err := server.store.CreateUser(ctx.Request().Context(), arg)
-
-	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Code.Name() {
-			case "unique_violation":
-				return echo.NewHTTPError(http.StatusForbidden, err)
-			}
-		}
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	return ctx.JSON(http.StatusCreated, userResponse{Name: user.Name, Login: user.Login})
-}
-func (server *Server) updateUser(ctx echo.Context) error {
-	var requestData userRequest
-
-	if err := ctx.Bind(&requestData); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	id, err := getUserId(ctx)
-
-	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err)
-	}
-
-	user, err := server.store.GetUserById(ctx.Request().Context(), id)
-
-	var newHashedPassword string
-
-	if requestData.Password == "" {
-		newHashedPassword = user.HashedPassword
-	} else {
-		newHashedPassword, err = util.HashPassword(requestData.Password)
-
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
-	}
-
-	arg := db.UpdateUserParams{
-		ID:             int64(id),
-		Name:           requestData.Name,
-		Login:          requestData.Login,
-		HashedPassword: newHashedPassword,
-	}
-
-	updatedUser, err := server.store.UpdateUser(ctx.Request().Context(), arg)
-
-	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Code.Name() {
-			case "unique_violation":
-				return echo.NewHTTPError(http.StatusForbidden, err)
-			}
-		}
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	return ctx.JSON(http.StatusOK, userResponse{Name: updatedUser.Name, Login: updatedUser.Login})
-
 }

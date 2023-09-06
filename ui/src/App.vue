@@ -2,8 +2,6 @@
 <div class="header">
   <a href="/" class="logo">Chat</a>
   <div class="header-right">
-    <a class="active" href="#home">Home</a>
-    
 
     <router-link v-if="loggedIn" to="/users">Users</router-link>
     <router-link v-if="loggedIn" to="/profile">Profile</router-link>
