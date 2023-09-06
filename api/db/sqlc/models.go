@@ -9,30 +9,29 @@ import (
 )
 
 type BlackList struct {
-	ID        int64        `json:"id"`
 	UserID    int64        `json:"user_id"`
 	FriendID  int64        `json:"friend_id"`
 	CreatedAt sql.NullTime `json:"created_at"`
 }
 
-type ChatRoom struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
+type Chat struct {
+	ID      int64 `json:"id"`
+	User1ID int64 `json:"user1_id"`
+	User2ID int64 `json:"user2_id"`
 }
 
 type Friend struct {
-	ID        int64        `json:"id"`
 	UserID    int64        `json:"user_id"`
 	FriendID  int64        `json:"friend_id"`
 	CreatedAt sql.NullTime `json:"created_at"`
 }
 
 type Message struct {
-	ID         int64       `json:"id"`
-	ChatRoomID int64       `json:"chat_room_id"`
-	UserID     int64       `json:"user_id"`
-	Content    string      `json:"content"`
-	Createdat  interface{} `json:"createdat"`
+	ID        int64        `json:"id"`
+	ChatID    int64        `json:"chat_id"`
+	UserID    int64        `json:"user_id"`
+	Content   string       `json:"content"`
+	Createdat sql.NullTime `json:"createdat"`
 }
 
 type User struct {
@@ -40,10 +39,4 @@ type User struct {
 	Name           string `json:"name"`
 	Login          string `json:"login"`
 	HashedPassword string `json:"hashed_password"`
-}
-
-type UserChatRoom struct {
-	ID         int64 `json:"id"`
-	UserID     int64 `json:"user_id"`
-	ChatRoomID int64 `json:"chat_room_id"`
 }

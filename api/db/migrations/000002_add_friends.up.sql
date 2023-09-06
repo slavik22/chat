@@ -1,8 +1,8 @@
 CREATE TABLE "friends" (
-                           "id" bigserial PRIMARY KEY,
                            "user_id" bigserial NOT NULL,
                            "friend_id" bigserial NOT NULL,
-                           "created_at" timestamp DEFAULT NOW()
+                           "created_at" timestamp DEFAULT NOW(),
+                            PRIMARY KEY(user_id, friend_id)
 );
 
 ALTER TABLE "friends" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");

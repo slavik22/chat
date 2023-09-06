@@ -10,9 +10,36 @@ import (
 	"golang.org/x/net/websocket"
 	"net/http"
 	"strconv"
-	"sync"
-	"time"
 )
+
+type Client struct {
+	UserId int
+	Conn   *websocket.Conn
+}
+
+type Message struct {
+	UserID  int    `json:"userId"`
+	Message string `json:"message"`
+}
+
+type ChatRoom struct {
+	id        int
+	clients   map[*Client]bool
+	broadcast chan Message
+	//mu        sync.Mutex
+}
+
+var (
+	rooms map[int]*ChatRoom
+)
+
+func createChatRoom(id int) *ChatRoom {
+	return &ChatRoom{
+		id:        id,
+		clients:   make(map[*Client]bool),
+		broadcast: make(chan Message),
+	}
+}
 
 func (server *Server) GetChatMessages(ctx echo.Context) error {
 	userId, err := getUserId(ctx)
@@ -26,13 +53,13 @@ func (server *Server) GetChatMessages(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	isMember, err := server.isMemberOfChatRoom(ctx, userId, int64(chatId))
+	chat, err := server.store.GetChat(ctx.Request().Context(), int64(chatId))
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	if !isMember {
+	if chat.User1ID != int64(userId) && chat.User2ID != int64(userId) {
 		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
 	}
 
@@ -64,113 +91,10 @@ func (server *Server) addMessage(ctx echo.Context, req db.CreateMessageParams) (
 	return &msg, nil
 }
 
-//func (server *Server) deleteMessage(ctx echo.Context) error {
-//	userId, err := getUserId(ctx)
-//	if err != nil {
-//		return echo.NewHTTPError(http.StatusUnauthorized, err)
-//	}
-//
-//	chatId, err := strconv.Atoi(ctx.Param("chatId"))
-//
-//	if err != nil {
-//		return echo.NewHTTPError(http.StatusBadRequest, err)
-//	}
-//
-//	isMember, err := server.isMemberOfChatRoom(ctx, userId, int64(chatId))
-//
-//	if err != nil {
-//		return echo.NewHTTPError(http.StatusInternalServerError, err)
-//	}
-//
-//	if !isMember {
-//		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
-//	}
-//
-//	messageId, err := strconv.Atoi(ctx.Param("messageId"))
-//
-//	if err != nil {
-//		return echo.NewHTTPError(http.StatusBadRequest, err)
-//	}
-//	err = server.store.DeleteMessage(ctx.Request().Context(), int64(messageId))
-//
-//	if err != nil {
-//		if errors.Is(err, sql.ErrNoRows) {
-//			return echo.NewHTTPError(http.StatusNotFound, err)
-//		} else {
-//			return echo.NewHTTPError(http.StatusInternalServerError, err)
-//		}
-//
-//	}
-//
-//	return ctx.NoContent(http.StatusOK)
-//}
-//func (server *Server) createMessage(ctx echo.Context) error {
-//	userId, err := getUserId(ctx)
-//	if err != nil {
-//		return echo.NewHTTPError(http.StatusUnauthorized, err)
-//	}
-//
-//	chatId, err := strconv.Atoi(ctx.Param("chatId"))
-//
-//	if err != nil {
-//		return echo.NewHTTPError(http.StatusBadRequest, err)
-//	}
-//
-//	isMember, err := server.isMemberOfChatRoom(ctx, userId, int64(chatId))
-//
-//	if err != nil {
-//		return echo.NewHTTPError(http.StatusInternalServerError, err)
-//	}
-//
-//	if !isMember {
-//		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
-//	}
-//
-//	var req db.CreateMessageParams
-//
-//	if err := ctx.Bind(&req); err != nil {
-//		return echo.NewHTTPError(http.StatusBadRequest, err)
-//	}
-//
-//	message, err := server.store.CreateMessage(ctx.Request().Context(), req)
-//
-//	if err != nil {
-//		if errors.Is(err, sql.ErrNoRows) {
-//			return echo.NewHTTPError(http.StatusNotFound, err)
-//		} else {
-//			return echo.NewHTTPError(http.StatusInternalServerError, err)
-//		}
-//
-//	}
-//
-//	return ctx.JSON(http.StatusCreated, message)
-//}
-
-type Client struct {
-	UserId int
-	Conn   *websocket.Conn
-}
-
-type Message struct {
-	UserID  int    `json:"userId"`
-	Message string `json:"message"`
-}
-
-type ChatRoom struct {
-	id        int
-	clients   map[*Client]bool
-	broadcast chan Message
-	mu        sync.Mutex
-}
-
-var (
-	rooms map[int]*ChatRoom
-)
-
 func (c *ChatRoom) handleMessages(server *Server, ctx echo.Context) {
 	for {
 		msg := <-c.broadcast
-		msgAdded, err := server.addMessage(ctx, db.CreateMessageParams{UserID: int64(msg.UserID), ChatRoomID: int64(c.id), Content: msg.Message})
+		msgAdded, err := server.addMessage(ctx, db.CreateMessageParams{UserID: int64(msg.UserID), ChatID: int64(c.id), Content: msg.Message})
 
 		if err != nil {
 			_ = fmt.Errorf("Cannot create message %v\n", err)
@@ -183,19 +107,17 @@ func (c *ChatRoom) handleMessages(server *Server, ctx echo.Context) {
 			return
 		}
 
-		t := msgAdded.Createdat.(time.Time)
-
 		m := struct {
-			Id        int64  `json:"id"`
-			UserId    int64  `json:"userId"`
-			Name      string `json:"name"`
-			CreatedAt string `json:"createdAt"`
-			Content   string `json:"content"`
+			Id        int64        `json:"id"`
+			UserId    int64        `json:"userId"`
+			Name      string       `json:"name"`
+			CreatedAt sql.NullTime `json:"createdAt"`
+			Content   string       `json:"content"`
 		}{
 			Id:        msgAdded.ID,
 			UserId:    msgAdded.UserID,
 			Name:      user.Name,
-			CreatedAt: t.String(),
+			CreatedAt: msgAdded.Createdat,
 			Content:   msgAdded.Content,
 		}
 
@@ -220,28 +142,19 @@ func (c *ChatRoom) handleMessages(server *Server, ctx echo.Context) {
 	}
 }
 
-func createChatRoom(id int) *ChatRoom {
-	return &ChatRoom{
-		id:        id,
-		clients:   make(map[*Client]bool),
-		broadcast: make(chan Message),
-	}
-}
-
 func (c *ChatRoom) addClient(client *Client) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	//c.mu.Lock()
+	//defer c.mu.Unlock()
 	c.clients[client] = true
 }
 
 func (c *ChatRoom) removeClient(client *Client) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	//c.mu.Lock()
+	//defer c.mu.Unlock()
 	delete(c.clients, client)
 }
 
 func (server *Server) webSocketConn(c echo.Context) error {
-	//userId, err := getUserId(c)
 	userId, err := strconv.Atoi(c.Param("userId"))
 
 	if err != nil {
@@ -253,13 +166,13 @@ func (server *Server) webSocketConn(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	isMember, err := server.isMemberOfChatRoom(c, int64(userId), int64(chatId))
+	chat, err := server.store.GetChat(c.Request().Context(), int64(chatId))
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	if !isMember {
+	if chat.User1ID != int64(userId) && chat.User2ID != int64(userId) {
 		return echo.NewHTTPError(http.StatusUnauthorized, "User is not member of chat room")
 	}
 
@@ -269,8 +182,6 @@ func (server *Server) webSocketConn(c echo.Context) error {
 		if rooms == nil {
 			rooms = make(map[int]*ChatRoom)
 		}
-		fmt.Printf("Before %v\n", rooms)
-
 		room, exists := rooms[chatId]
 
 		if !exists {
@@ -285,7 +196,11 @@ func (server *Server) webSocketConn(c echo.Context) error {
 			room.removeClient(client)
 			ws.Close()
 		}()
-		fmt.Printf("After %v\n", rooms)
+
+		for k, _ := range rooms[chatId].clients {
+			fmt.Printf("Client: userId= %v, valur = %v\n", k.UserId, rooms[chatId].clients)
+
+		}
 
 		for {
 			var content string
@@ -303,5 +218,10 @@ func (server *Server) webSocketConn(c echo.Context) error {
 		}
 
 	}).ServeHTTP(c.Response(), c.Request())
+
+	if len(rooms[chatId].clients) == 0 {
+		delete(rooms, chatId)
+	}
+
 	return nil
 }

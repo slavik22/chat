@@ -40,3 +40,38 @@ func (q *Queries) DeleteUserFromChat(ctx context.Context, arg DeleteUserFromChat
 	_, err := q.db.ExecContext(ctx, deleteUserFromChat, arg.ChatRoomID, arg.UserID)
 	return err
 }
+
+const getChatUsers = `-- name: GetChatUsers :many
+SELECT users.id,users.name, users.login FROM user_chat_rooms
+INNER JOIN users ON user_chat_rooms.user_id = users.id
+WHERE chat_room_id = $1
+`
+
+type GetChatUsersRow struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Login string `json:"login"`
+}
+
+func (q *Queries) GetChatUsers(ctx context.Context, chatRoomID int64) ([]GetChatUsersRow, error) {
+	rows, err := q.db.QueryContext(ctx, getChatUsers, chatRoomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetChatUsersRow{}
+	for rows.Next() {
+		var i GetChatUsersRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Login); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

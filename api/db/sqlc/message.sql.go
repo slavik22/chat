@@ -7,29 +7,30 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createMessage = `-- name: CreateMessage :one
 INSERT INTO messages (
-    chat_room_id,
+    chat_id,
     user_id,
     content
 ) VALUES ($1, $2, $3)
-RETURNING id, chat_room_id, user_id, content, createdat
+RETURNING id, chat_id, user_id, content, createdat
 `
 
 type CreateMessageParams struct {
-	ChatRoomID int64  `json:"chat_room_id"`
-	UserID     int64  `json:"user_id"`
-	Content    string `json:"content"`
+	ChatID  int64  `json:"chat_id"`
+	UserID  int64  `json:"user_id"`
+	Content string `json:"content"`
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error) {
-	row := q.db.QueryRowContext(ctx, createMessage, arg.ChatRoomID, arg.UserID, arg.Content)
+	row := q.db.QueryRowContext(ctx, createMessage, arg.ChatID, arg.UserID, arg.Content)
 	var i Message
 	err := row.Scan(
 		&i.ID,
-		&i.ChatRoomID,
+		&i.ChatID,
 		&i.UserID,
 		&i.Content,
 		&i.Createdat,
@@ -48,22 +49,21 @@ func (q *Queries) DeleteMessage(ctx context.Context, id int64) error {
 }
 
 const getChatMessages = `-- name: GetChatMessages :many
-SELECT messages.id,chat_room_id,user_id,content,createdAt,users.name FROM messages
+SELECT messages.id, messages.user_id, messages.content, messages.createdAt, users.name FROM messages
 INNER JOIN users On messages.user_id = users.id
-WHERE chat_room_id = $1
+WHERE chat_id = $1
 `
 
 type GetChatMessagesRow struct {
-	ID         int64       `json:"id"`
-	ChatRoomID int64       `json:"chat_room_id"`
-	UserID     int64       `json:"user_id"`
-	Content    string      `json:"content"`
-	Createdat  interface{} `json:"createdat"`
-	Name       string      `json:"name"`
+	ID        int64        `json:"id"`
+	UserID    int64        `json:"user_id"`
+	Content   string       `json:"content"`
+	Createdat sql.NullTime `json:"createdat"`
+	Name      string       `json:"name"`
 }
 
-func (q *Queries) GetChatMessages(ctx context.Context, chatRoomID int64) ([]GetChatMessagesRow, error) {
-	rows, err := q.db.QueryContext(ctx, getChatMessages, chatRoomID)
+func (q *Queries) GetChatMessages(ctx context.Context, chatID int64) ([]GetChatMessagesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getChatMessages, chatID)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,6 @@ func (q *Queries) GetChatMessages(ctx context.Context, chatRoomID int64) ([]GetC
 		var i GetChatMessagesRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.ChatRoomID,
 			&i.UserID,
 			&i.Content,
 			&i.Createdat,
@@ -96,7 +95,7 @@ const updateMessage = `-- name: UpdateMessage :one
 UPDATE messages
 SET content = $2
 WHERE id = $1
- RETURNING id, chat_room_id, user_id, content, createdat
+RETURNING id, chat_id, user_id, content, createdat
 `
 
 type UpdateMessageParams struct {
@@ -109,7 +108,7 @@ func (q *Queries) UpdateMessage(ctx context.Context, arg UpdateMessageParams) (M
 	var i Message
 	err := row.Scan(
 		&i.ID,
-		&i.ChatRoomID,
+		&i.ChatID,
 		&i.UserID,
 		&i.Content,
 		&i.Createdat,

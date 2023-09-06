@@ -1,11 +1,11 @@
 -- name: GetChatMessages :many
-SELECT messages.id,chat_room_id,user_id,content,createdAt,users.name FROM messages
+SELECT messages.id, messages.user_id, messages.content, messages.createdAt, users.name FROM messages
 INNER JOIN users On messages.user_id = users.id
-WHERE chat_room_id = $1;
+WHERE chat_id = $1;
 
 -- name: CreateMessage :one
 INSERT INTO messages (
-    chat_room_id,
+    chat_id,
     user_id,
     content
 ) VALUES ($1, $2, $3)
@@ -19,4 +19,4 @@ WHERE id=$1;
 UPDATE messages
 SET content = $2
 WHERE id = $1
- RETURNING *;
+RETURNING *;

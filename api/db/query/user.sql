@@ -31,7 +31,7 @@ SELECT users.id, users.name, users.login FROM friends
 INSERT INTO friends (
     user_id,
     friend_id
-) VALUES ($1, $2);
+) VALUES ($1, $2), ($2,$1);
 
 -- name: DeleteFriend :exec
 DELETE FROM friends
@@ -41,6 +41,10 @@ DELETE FROM friends
 SELECT users.id, users.name, users.login FROM black_list
     INNER JOIN users On black_list.friend_id = users.id
                                          WHERE user_id = $1;
+
+-- name: GetUserFromBlackList :one
+SELECT * FROM black_list
+WHERE user_id = $1 AND friend_id = $2 LIMIT 1;
 
 -- name: AddBlackList :exec
 INSERT INTO black_list (

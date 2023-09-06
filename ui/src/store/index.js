@@ -7,7 +7,7 @@ const store = createStore({
   modules: {
     auth,
     chat,
-    message
+    message,
   },
 });
 
