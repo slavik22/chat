@@ -137,7 +137,7 @@ export default {
       axios.post('http://localhost:8080/api/v1/users/upload', formData, {headers: authHeader() })
         .then(response => response.data)
         .then(message => {
-          console.log(message);
+          alert(message);
         })
         .catch(error => {
           this.message =
