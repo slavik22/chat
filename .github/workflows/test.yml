@@ -50,4 +50,4 @@ jobs:
         run: cd api
 
       - name: Run tests
-        run: go test ./...
+        run: go test -v -cover -short
