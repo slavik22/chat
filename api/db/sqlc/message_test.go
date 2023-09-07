@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func createRandomMessage(t *testing.T) User {
+func createRandomMessage(t *testing.T) Message {
 	user := createRandomUser(t)
 	chat := createRandomChat(t)
 
@@ -28,7 +28,7 @@ func createRandomMessage(t *testing.T) User {
 	require.Equal(t, args.UserID, message.UserID)
 	require.Equal(t, args.Content, message.Content)
 
-	return user
+	return message
 }
 
 func TestCreateMessage(t *testing.T) {

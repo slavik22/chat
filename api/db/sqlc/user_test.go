@@ -13,7 +13,7 @@ func createRandomUser(t *testing.T) User {
 
 	arg := CreateUserParams{
 		Name:           util.RandomString(6),
-		Login:          util.RandomOwner(),
+		Login:          util.RandomString(6),
 		HashedPassword: hashedPassword,
 	}
 
