@@ -6,6 +6,7 @@ package mock_sqlc
 
 import (
 	context "context"
+	sql "database/sql"
 	reflect "reflect"
 
 	db "github.com/slavik22/chat/db/sqlc"
@@ -224,6 +225,21 @@ func (mr *MockStoreMockRecorder) GetFriends(arg0, arg1 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFriends", reflect.TypeOf((*MockStore)(nil).GetFriends), arg0, arg1)
 }
 
+// GetImageName mocks base method.
+func (m *MockStore) GetImageName(arg0 context.Context, arg1 int64) (sql.NullString, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageName", arg0, arg1)
+	ret0, _ := ret[0].(sql.NullString)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetImageName indicates an expected call of GetImageName.
+func (mr *MockStoreMockRecorder) GetImageName(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageName", reflect.TypeOf((*MockStore)(nil).GetImageName), arg0, arg1)
+}
+
 // GetUserById mocks base method.
 func (m *MockStore) GetUserById(arg0 context.Context, arg1 int64) (db.User, error) {
 	m.ctrl.T.Helper()
@@ -297,6 +313,21 @@ func (m *MockStore) GetUsers(arg0 context.Context) ([]db.User, error) {
 func (mr *MockStoreMockRecorder) GetUsers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsers", reflect.TypeOf((*MockStore)(nil).GetUsers), arg0)
+}
+
+// UpdateImageName mocks base method.
+func (m *MockStore) UpdateImageName(arg0 context.Context, arg1 db.UpdateImageNameParams) (db.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateImageName", arg0, arg1)
+	ret0, _ := ret[0].(db.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateImageName indicates an expected call of UpdateImageName.
+func (mr *MockStoreMockRecorder) UpdateImageName(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateImageName", reflect.TypeOf((*MockStore)(nil).UpdateImageName), arg0, arg1)
 }
 
 // UpdateMessage mocks base method.
