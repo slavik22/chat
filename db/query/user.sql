@@ -22,6 +22,17 @@ SET name = $2, login = $3, hashed_password = $4
 WHERE id = $1
 RETURNING *;
 
+-- name: UpdateImageName :one
+UPDATE users
+SET image_name = $2
+WHERE id = $1
+RETURNING *;
+
+-- name: GetImageName :one
+SELECT image_name
+From users
+WHERE id = $1;
+
 -- name: GetFriends :many
 SELECT users.id, users.name, users.login FROM friends
     INNER JOIN users On friends.friend_id = users.id

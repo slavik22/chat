@@ -3,7 +3,7 @@ SELECT * FROM chats
 WHERE id = $1;
 
 -- name: GetUserChats :many
-SELECT c.id, user1.name as name1, user2.name as name2
+SELECT c.id, user1.id as user1Id, user2.id as user2Id, user1.name as name1, user2.name as name2
 FROM chats c
 JOIN users user1 ON c.user1_id = user1.id
 JOIN users user2 ON c.user2_id = user2.id

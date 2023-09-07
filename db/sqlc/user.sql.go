@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const addBlackList = `-- name: AddBlackList :exec
@@ -48,7 +49,7 @@ INSERT INTO users (
     name,
     login,
     hashed_password
-) VALUES ($1, $2, $3) RETURNING id, name, login, hashed_password
+) VALUES ($1, $2, $3) RETURNING id, name, login, hashed_password, image_name
 `
 
 type CreateUserParams struct {
@@ -65,6 +66,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Name,
 		&i.Login,
 		&i.HashedPassword,
+		&i.ImageName,
 	)
 	return i, err
 }
@@ -169,8 +171,21 @@ func (q *Queries) GetFriends(ctx context.Context, userID int64) ([]GetFriendsRow
 	return items, nil
 }
 
+const getImageName = `-- name: GetImageName :one
+SELECT image_name
+From users
+WHERE id = $1
+`
+
+func (q *Queries) GetImageName(ctx context.Context, id int64) (sql.NullString, error) {
+	row := q.db.QueryRowContext(ctx, getImageName, id)
+	var image_name sql.NullString
+	err := row.Scan(&image_name)
+	return image_name, err
+}
+
 const getUserById = `-- name: GetUserById :one
-SELECT id, name, login, hashed_password FROM users
+SELECT id, name, login, hashed_password, image_name FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -182,12 +197,13 @@ func (q *Queries) GetUserById(ctx context.Context, id int64) (User, error) {
 		&i.Name,
 		&i.Login,
 		&i.HashedPassword,
+		&i.ImageName,
 	)
 	return i, err
 }
 
 const getUserByLogin = `-- name: GetUserByLogin :one
-SELECT id, name, login, hashed_password FROM users
+SELECT id, name, login, hashed_password, image_name FROM users
 WHERE login = $1 LIMIT 1
 `
 
@@ -199,6 +215,7 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error
 		&i.Name,
 		&i.Login,
 		&i.HashedPassword,
+		&i.ImageName,
 	)
 	return i, err
 }
@@ -221,7 +238,7 @@ func (q *Queries) GetUserFromBlackList(ctx context.Context, arg GetUserFromBlack
 }
 
 const getUsers = `-- name: GetUsers :many
-SELECT id, name, login, hashed_password FROM users
+SELECT id, name, login, hashed_password, image_name FROM users
 `
 
 func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
@@ -238,6 +255,7 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 			&i.Name,
 			&i.Login,
 			&i.HashedPassword,
+			&i.ImageName,
 		); err != nil {
 			return nil, err
 		}
@@ -252,11 +270,36 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const updateImageName = `-- name: UpdateImageName :one
+UPDATE users
+SET image_name = $2
+WHERE id = $1
+RETURNING id, name, login, hashed_password, image_name
+`
+
+type UpdateImageNameParams struct {
+	ID        int64          `json:"id"`
+	ImageName sql.NullString `json:"image_name"`
+}
+
+func (q *Queries) UpdateImageName(ctx context.Context, arg UpdateImageNameParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateImageName, arg.ID, arg.ImageName)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Login,
+		&i.HashedPassword,
+		&i.ImageName,
+	)
+	return i, err
+}
+
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET name = $2, login = $3, hashed_password = $4
 WHERE id = $1
-RETURNING id, name, login, hashed_password
+RETURNING id, name, login, hashed_password, image_name
 `
 
 type UpdateUserParams struct {
@@ -279,6 +322,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.Name,
 		&i.Login,
 		&i.HashedPassword,
+		&i.ImageName,
 	)
 	return i, err
 }

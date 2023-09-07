@@ -2,6 +2,7 @@
   <div class="container mt-4">
     <ul class="list-group">
       <li class="list-group-item" v-for="chat in chatList" :key="chat.id">
+        <img src="http://localhost:8080/api/v1/download/2" alt="profile" class="img-circle">
         <router-link :to="'/chat/' + chat.id" class="chat-room-link">
           {{ chat.name1 === currentUser.user.name ? chat.name1: chat.name2 }}
         </router-link>
@@ -22,6 +23,9 @@ export default {
         })
   },
   methods: {
+    getImage(user1Id, user2Id){
+      return "http://localhost:8080/api/v1/download/" + this.currentUser.id === user1Id ? user1Id : user2Id
+    },
     deleteChat(chatId){
       this.chatDelete(chatId)
       location.reload() 

@@ -48,6 +48,8 @@ func (server *Server) setupRouter() {
 
 	v1 := router.Group("api/v1")
 
+	v1.GET("/download/:userId", server.downloadImage)
+
 	auth := v1.Group("/auth")
 	{
 		auth.POST("/login", server.loginUser)
@@ -59,6 +61,7 @@ func (server *Server) setupRouter() {
 		users.GET("/", server.getUsers)
 		users.GET("/:id", server.getUser)
 		users.PUT("/", server.updateUser)
+		users.POST("/upload", server.uploadImage)
 
 		friends := users.Group("/friends")
 		{

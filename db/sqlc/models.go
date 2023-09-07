@@ -35,8 +35,9 @@ type Message struct {
 }
 
 type User struct {
-	ID             int64  `json:"id"`
-	Name           string `json:"name"`
-	Login          string `json:"login"`
-	HashedPassword string `json:"hashed_password"`
+	ID             int64          `json:"id"`
+	Name           string         `json:"name"`
+	Login          string         `json:"login"`
+	HashedPassword string         `json:"hashed_password"`
+	ImageName      sql.NullString `json:"image_name"`
 }

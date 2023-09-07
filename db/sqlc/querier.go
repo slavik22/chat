@@ -6,6 +6,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 type Querier interface {
@@ -22,11 +23,13 @@ type Querier interface {
 	GetChat(ctx context.Context, id int64) (Chat, error)
 	GetChatMessages(ctx context.Context, chatID int64) ([]GetChatMessagesRow, error)
 	GetFriends(ctx context.Context, userID int64) ([]GetFriendsRow, error)
+	GetImageName(ctx context.Context, id int64) (sql.NullString, error)
 	GetUserById(ctx context.Context, id int64) (User, error)
 	GetUserByLogin(ctx context.Context, login string) (User, error)
 	GetUserChats(ctx context.Context, user1ID int64) ([]GetUserChatsRow, error)
 	GetUserFromBlackList(ctx context.Context, arg GetUserFromBlackListParams) (BlackList, error)
 	GetUsers(ctx context.Context) ([]User, error)
+	UpdateImageName(ctx context.Context, arg UpdateImageNameParams) (User, error)
 	UpdateMessage(ctx context.Context, arg UpdateMessageParams) (Message, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }

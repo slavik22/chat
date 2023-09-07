@@ -1,5 +1,10 @@
 <template>
   <div class="container mt-4">
+    <form class="form-outline mb-4" @submit="uploadImage">
+        <input type="file" @change="handleFileUpload" accept="image/*" required class="form-label"><br>
+        <input type="submit" class="btn btn-success" value="Upload">
+    </form>
+
     <Form @submit="updateProfile" :validation-schema="schema">
       <div class="form-outline">
         <label for="name">Name:</label>
@@ -78,6 +83,7 @@ export default {
     });
 
     return {
+      file: null,
       password: "",
       friends: null,
       blackList: null,
@@ -120,10 +126,35 @@ export default {
 
   },
   methods: {
+    handleFileUpload(event) {
+      this.file = event.target.files[0];
+    },
+    uploadImage(e) {
+      e.preventDefault()
+      const formData = new FormData();
+      formData.append('image', this.file);
+
+      axios.post('http://localhost:8080/api/v1/users/upload', formData, {headers: authHeader() })
+        .then(response => response.data)
+        .then(message => {
+          console.log(message);
+        })
+        .catch(error => {
+          this.message =
+              (error.response &&
+                error.response.data &&
+                error.response.data.message) ||
+              error.message ||
+              error.toString();
+        });
+    },
     async updateProfile() {
       this.loading = true;
 
-      await axios.put("http://localhost:8080/api/v1/users/", { name: this.currentUser.name, login: this.currentUser.login, password: this.password }, { headers: authHeader() })
+      const formData = new FormData();
+      formData.append('image', this.file);
+
+      await axios.put("http://localhost:8080/api/v1/users/", { name: this.currentUser.name, login: this.currentUser.login, password: this.password, image: formData }, { headers: authHeader() })
         .then(
           () => {
             this.$store.dispatch("auth/logout")

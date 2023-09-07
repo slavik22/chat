@@ -3,12 +3,17 @@ package api
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/lib/pq"
 	db "github.com/slavik22/chat/db/sqlc"
 	"github.com/slavik22/chat/util"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 type userLoginRequest struct {
@@ -178,6 +183,75 @@ func (server *Server) updateUser(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, userResponse{Name: updatedUser.Name, Login: updatedUser.Login})
 
+}
+func (server *Server) uploadImage(c echo.Context) error {
+	userId, err := getUserId(c)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll("images", os.ModePerm)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Error creating images directory: %v\n", err)
+	}
+
+	fileName := strconv.FormatInt(userId, 10) + "." + strings.Split(file.Filename, ".")[1]
+
+	_, err = server.store.UpdateImageName(c.Request().Context(), db.UpdateImageNameParams{ID: userId, ImageName: sql.NullString{String: fileName, Valid: true}})
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	dst, err := os.Create(filepath.Join("images", fileName))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	defer dst.Close()
+
+	open, err := file.Open()
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if _, err := io.Copy(dst, open); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.String(http.StatusOK, fmt.Sprintf("File %s has been uploaded successfully.", file.Filename))
+}
+func (server *Server) downloadImage(c echo.Context) error {
+	//userId, err := getUserId(c)
+
+	userId, err := strconv.Atoi(c.Param("userId"))
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	name, err := server.store.GetImageName(c.Request().Context(), int64(userId))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	filePath := "images/" + name.String
+
+	c.Response().Header().Set("Content-Disposition", "attachment; filename="+name.String)
+	c.Response().Header().Set("Content-Type", "image")
+
+	return c.File(filePath)
 }
 
 func (server *Server) getFriends(ctx echo.Context) error {

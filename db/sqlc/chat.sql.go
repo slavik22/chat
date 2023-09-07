@@ -52,7 +52,7 @@ func (q *Queries) GetChat(ctx context.Context, id int64) (Chat, error) {
 }
 
 const getUserChats = `-- name: GetUserChats :many
-SELECT c.id, user1.name as name1, user2.name as name2
+SELECT c.id, user1.id as user1Id, user2.id as user2Id, user1.name as name1, user2.name as name2
 FROM chats c
 JOIN users user1 ON c.user1_id = user1.id
 JOIN users user2 ON c.user2_id = user2.id
@@ -60,9 +60,11 @@ WHERE c.user1_id = $1 OR c.user2_id = $1
 `
 
 type GetUserChatsRow struct {
-	ID    int64  `json:"id"`
-	Name1 string `json:"name1"`
-	Name2 string `json:"name2"`
+	ID      int64  `json:"id"`
+	User1id int64  `json:"user1id"`
+	User2id int64  `json:"user2id"`
+	Name1   string `json:"name1"`
+	Name2   string `json:"name2"`
 }
 
 func (q *Queries) GetUserChats(ctx context.Context, user1ID int64) ([]GetUserChatsRow, error) {
@@ -74,7 +76,13 @@ func (q *Queries) GetUserChats(ctx context.Context, user1ID int64) ([]GetUserCha
 	items := []GetUserChatsRow{}
 	for rows.Next() {
 		var i GetUserChatsRow
-		if err := rows.Scan(&i.ID, &i.Name1, &i.Name2); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.User1id,
+			&i.User2id,
+			&i.Name1,
+			&i.Name2,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
