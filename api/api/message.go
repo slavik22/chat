@@ -206,7 +206,7 @@ func (server *Server) webSocketConn(c echo.Context) error {
 		for {
 			var content string
 			if err := websocket.Message.Receive(ws, &content); err != nil {
-				fmt.Printf("Error receiving message: %v\n")
+				fmt.Printf("Error receiving message: %v\n", err)
 				break
 			}
 

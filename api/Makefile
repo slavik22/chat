@@ -28,4 +28,4 @@ server:
 	go run main.go
 
 mock:
-	mockgen -destination db/mock/store.go github.com/slavik22/imageAPI/db/sqlc Store
+	mockgen -destination db/mock/store.go github.com/slavik22/chat/db/sqlc Store
