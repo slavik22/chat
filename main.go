@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/slavik22/chat/api"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
-	"github.com/slavik22/chat/api"
 	db "github.com/slavik22/chat/db/sqlc"
 	"github.com/slavik22/chat/util"
 	"log"
