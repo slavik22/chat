@@ -46,8 +46,8 @@ jobs:
 #      - name: Run migrations
 #        run: make migrateup
 
-      - name: Change directory to the 'api' folder
-        run: cd api
+#      - name: Change directory to the 'api' folder
+#        run: cd api
 
       - name: Run tests
-        run: go test -v -cover -short
+        run: go test -v -cover -short ./...
